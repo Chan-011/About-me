@@ -1,0 +1,81 @@
+---
+title: "Linear Regression in R"
+author: "Chanon Lemsen"
+output: html_document
+---
+## About Report
+This RMarkdown file contains the final report of the data analysis done for this project on building a linear regression model for the txhousing data set. 
+
+## Create a model to predict house prices in Iowa
+In this task, I built a simple model from scratch to predict house prices using variables in a data set
+```{r}
+## import CSV file
+house_sales <- read_csv("house_sales_prices.csv")
+
+## Create a broad overview of the data set
+glimpse(house_sales)
+
+## Drop the missing values and do some feature engineering [Age] column
+house_sales <- house_sales %>% drop_na()
+house_sales %<>% mutate(Age = 2023 - YearBuilt)
+
+```
+
+
+```{r}
+## Dealing with outliers (There is room to improve, like using loops)
+
+Q_sales <- quantile(house_sales$SalePrice, probs=c(.25, .75), na.rm = FALSE)
+iqr_sales <- IQR(house_sales$SalePrice)
+up_sales <-  Q_sales[2]+1.5*iqr_sales  
+low_sales <- Q_sales[1]-1.5*iqr_sales
+house_sales <- subset(house_sales, house_sales$SalePrice > (Q_sales[1] - 1.5*iqr_sales) 
+                      & house_sales$SalePrice < (Q_sales[2]+1.5*iqr_sales))
+
+Q_LotF <- quantile(house_sales$LotFrontage, probs=c(.25, .75), na.rm = FALSE)
+iqr_LotF <- IQR(house_sales$LotFrontage)
+up_LotF <-  Q_LotF[2]+1.5*iqr_LotF  
+low_LotF <- Q_LotF[1]-1.5*iqr_LotF
+house_sales <- subset(house_sales, house_sales$LotFrontage > (Q_LotF[1] - 1.5*iqr_LotF) 
+                      & house_sales$LotFrontage < (Q_LotF[2]+1.5*iqr_LotF))
+
+
+Q_LotA <- quantile(house_sales$LotArea, probs=c(.25, .75), na.rm = FALSE)
+iqr_LotA <- IQR(house_sales$LotArea)
+up_LotA <-  Q_LotA[2]+1.5*iqr_LotA  
+low_LotA <- Q_LotA[1]-1.5*iqr_LotA
+house_sales <- subset(house_sales, house_sales$LotArea > (Q_LotA[1] - 1.5*iqr_LotA) 
+                      & house_sales$LotArea < (Q_LotA[2]+1.5*iqr_LotA))
+
+
+Q_Age <- quantile(house_sales$Age, probs=c(.25, .75), na.rm = FALSE)
+iqr_Age <- IQR(house_sales$Age)
+up_Age <-  Q_Age[2]+1.5*iqr_Age  
+low_Age <- Q_Age[1]-1.5*iqr_Age
+house_sales <- subset(house_sales, house_sales$Age > (Q_Age[1] - 1.5*iqr_Age) 
+                      & house_sales$Age < (Q_Age[2]+1.5*iqr_Age))
+```
+
+
+```{r}
+
+## Build the multiple regression model
+mult_reg <- lm(SalePrice ~ Age + LotFrontage + LotArea, data = house_sales)
+
+## Check the summary of the multiple regression model
+summary(mult_reg)
+
+## Perform diagnostic plots of the fitted multiple regression model
+plot(mult_reg)
+
+## Predict new values using the model
+# The 1st house: L-type house
+# The 2nd house: M-type house
+# The 3rd house: S-type house
+
+pred <- predict(mult_reg,
+                newdata = data.frame(Age=c(17, 140, 54), 
+                                     LotFrontage=c(108, 35, 74), 
+                                     LotArea=c(10000, 1500, 5000))
+                )
+```
